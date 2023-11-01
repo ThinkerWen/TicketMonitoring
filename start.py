@@ -56,12 +56,13 @@ class Runner:
         cursor.execute(f"select show_id, platform from ticket_order_monitor_show where monitor_end_time > CURRENT_TIMESTAMP")
         for show in cursor.fetchall():
             monitor = None
-            if show[1] == 0:
-                monitor = DM(show[1])
-            elif show[5] == 1:
-                monitor = MY(int(show[1]))
-            elif show[5] == 2:
-                monitor = FWD(int(show[1]))
+            performId, platformId = show
+            if platformId == 0:
+                monitor = DM(performId)
+            elif platformId == 1:
+                monitor = MY(int(performId))
+            elif platformId == 2:
+                monitor = FWD(int(performId))
             if monitor:
                 task_list.append(monitor)
             else:

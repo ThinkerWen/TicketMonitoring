@@ -29,7 +29,7 @@ class Monitor:
             # 可以修改为动态获取代理
             cls._proxy_data = {
                 "http": f"http://127.0.0.1:12301",
-                "https": f"http://@127.0.0.1:12301"
+                "https": f"http://127.0.0.1:12301"
             }
             cls._last_time = current_time
         return cls._proxy_data
