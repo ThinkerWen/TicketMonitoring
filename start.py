@@ -1,74 +1,55 @@
+import json
 import logging
-import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-
-import pymysql
+from typing import Union
 
 from Monitor_DM import DM
 from Monitor_FWD import FWD
 from Monitor_MY import MY
+from Monitor_PXQ import PXQ
+
+
+def get_task(show: dict) -> Union[DM, MY, FWD, PXQ, None]:
+    if show.get("platform") == 0:
+        return DM(show)
+    elif show.get("platform") == 1:
+        return MY(show)
+    elif show.get("platform") == 2:
+        return FWD(show)
+    elif show.get("platform") == 3:
+        return PXQ(show)
+    else:
+        return None
 
 
 class Runner:
 
-    thread_local = threading.local()
     threadPool = ThreadPoolExecutor(max_workers=100, thread_name_prefix="ticket_monitor_")
 
     @staticmethod
-    def create_cursor():
-        connect = pymysql.Connect(
-            host="localhost",
-            port=3306,
-            user="root",
-            passwd="123456",
-            db="db_name",
-            charset='utf8'
-        )
-        return connect.cursor()
-
-    def get_cursor(self):
-        if not hasattr(self.thread_local, 'cursor'):
-            self.thread_local.cursor = self.create_cursor()
-        return self.thread_local.cursor
-
-    def loop_monitor(self, monitor_obj) -> None:
-        cursor = self.get_cursor()
-        cursor.execute(f"select monitor_end_time from ticket_order_monitor_show where monitor_end_time > CURRENT_TIMESTAMP and show_id = '{monitor_obj.performId}'")
-        end_time = cursor.fetchone()[0]
-        while end_time > datetime.now():
+    def loop_monitor(monitor: Union[DM, MY, FWD], show: dict) -> None:
+        while datetime.strptime(show.get("deadline"), "%Y-%m-%d %H:%M:%S") > datetime.now():
             try:
-                monitor_obj.proxy = monitor_obj.proxy_data
-                can_buy_list = monitor_obj.monitor()
-                if can_buy_list and monitor_obj.last_alert_time + 30 <= time.time():
-                    monitor_obj.last_alert_time = time.time()
-                    monitor_obj.send_replenish_alert(monitor_obj.show_info.get("show_name"))
+                if monitor.monitor():
+                    monitor.bark_alert(f"平台{show.get('platform')} {show.get('show_name')} 已回流，请及时购票！")
             except Exception as e:
                 logging.info(f"发生错误：{e}")
-                time.sleep(5)
             finally:
                 time.sleep(1)
 
     def start(self):
-        task_list = list()
-        cursor = self.create_cursor()
-        cursor.execute(f"select show_id, platform from ticket_order_monitor_show where monitor_end_time > CURRENT_TIMESTAMP")
-        for show in cursor.fetchall():
-            monitor = None
-            performId, platformId = show
-            if platformId == 0:
-                monitor = DM(performId)
-            elif platformId == 1:
-                monitor = MY(int(performId))
-            elif platformId == 2:
-                monitor = FWD(int(performId))
-            if monitor:
-                task_list.append(monitor)
+        file = open("config.json", "r", encoding="utf-8")
+        show_list = json.loads(file.read())
+        file.close()
+
+        for show in show_list:
+            task = get_task(show)
+            if task:
+                self.threadPool.submit(self.loop_monitor, task, show)
             else:
-                return
-        for task in task_list:
-            self.threadPool.submit(self.loop_monitor, task)
+                logging.error(f"监控对象 {show.get('show_name')} 加载失败 show_id: {show.get('show_id')}")
         self.threadPool.shutdown(wait=True)
 
 

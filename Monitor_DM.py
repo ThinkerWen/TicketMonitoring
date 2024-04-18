@@ -4,26 +4,25 @@ import time
 from hashlib import md5
 
 import requests
+from requests import Response
 
-from Headers import get_DM_headers
 from Monitor import Monitor
 
 
 class DM(Monitor):
 
-    def __init__(self, performId: str) -> None:
+    def __init__(self, perform: dict) -> None:
         super().__init__()
-        logging.info(f"大麦 {performId} 开始加载")
+        logging.info(f"大麦 {perform.get('show_name')} 开始加载")
         self.cookies = self.get_cookies(True)
-        self.performId = performId
+        self.performId = perform.get('show_id')
         self.show_info = dict()
         self.get_show_infos()
         logging.info(f"大麦 {self.show_info.get('show_name')} 加载成功")
 
     def get_show_infos(self):
-        headers = get_DM_headers()
         t, sign = self.get_show_params()
-        response = requests.get('https://mtop.damai.cn/h5/mtop.alibaba.damai.detail.getdetail/1.2/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.damai.detail.getdetail&v=1.2&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":%s,"platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId), cookies=self.cookies, headers=headers, verify=False, timeout=10)
+        response = self.request('https://mtop.damai.cn/h5/mtop.alibaba.damai.detail.getdetail/1.2/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.damai.detail.getdetail&v=1.2&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":%s,"platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId))
         data = json.loads(response.text).get("data")
         if not data:
             self.cookies = self.get_cookies(True)
@@ -37,7 +36,7 @@ class DM(Monitor):
             session_id = session.get("performs")[0].get("performId")
             session_name = session.get("performs")[0].get("performName")
             t, sign = self.get_seat_params(session_id)
-            response = requests.get('https://mtop.damai.cn/h5/mtop.alibaba.detail.subpage.getdetail/2.0/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.detail.subpage.getdetail&v=2.0&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":"%s","bizCode":"ali.china.damai","scenario":"itemsku","exParams":"{\\"dataType\\":2,\\"dataId\\":\\"%s\\",\\"privilegeActId\\":\\"\\"}","platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId, session_id), cookies=self.cookies, headers=headers, verify=False, timeout=10)
+            response = self.request('https://mtop.damai.cn/h5/mtop.alibaba.detail.subpage.getdetail/2.0/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.detail.subpage.getdetail&v=2.0&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":"%s","bizCode":"ali.china.damai","scenario":"itemsku","exParams":"{\\"dataType\\":2,\\"dataId\\":\\"%s\\",\\"privilegeActId\\":\\"\\"}","platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId, session_id))
             data = json.loads(response.text)
             if not data:
                 self.cookies = self.get_cookies(True)
@@ -54,9 +53,8 @@ class DM(Monitor):
     def monitor(self) -> list:
         logging.info(f"大麦 {self.show_info.get('show_name')} 监控中")
         can_buy_list = list()
-        headers = get_DM_headers()
         t, sign = self.get_show_params()
-        response = requests.get('https://mtop.damai.cn/h5/mtop.alibaba.damai.detail.getdetail/1.2/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.damai.detail.getdetail&v=1.2&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":%s,"platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId), cookies=self.cookies, headers=headers, verify=False, proxies=self.proxy, timeout=10)
+        response = self.request('https://mtop.damai.cn/h5/mtop.alibaba.damai.detail.getdetail/1.2/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.damai.detail.getdetail&v=1.2&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":%s,"platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId))
         data = json.loads(response.text).get("data")
         if not data:
             self.cookies = self.get_cookies(True)
@@ -65,7 +63,7 @@ class DM(Monitor):
         for session in show_info.get("item").get("performBases"):
             session_id = session.get("performs")[0].get("performId")
             t, sign = self.get_seat_params(session_id)
-            response = requests.get('https://mtop.damai.cn/h5/mtop.alibaba.detail.subpage.getdetail/2.0/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.detail.subpage.getdetail&v=2.0&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":"%s","bizCode":"ali.china.damai","scenario":"itemsku","exParams":"{\\"dataType\\":2,\\"dataId\\":\\"%s\\",\\"privilegeActId\\":\\"\\"}","platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId, session_id), cookies=self.cookies, headers=headers, verify=False, proxies=self.proxy, timeout=10)
+            response = self.request('https://mtop.damai.cn/h5/mtop.alibaba.detail.subpage.getdetail/2.0/?jsv=2.7.2&appKey=12574478&t=%d&sign=%s&api=mtop.alibaba.detail.subpage.getdetail&v=2.0&H5Request=true&type=originaljson&timeout=10000&dataType=json&valueType=original&forceAntiCreep=true&AntiCreep=true&useH5=true&data={"itemId":"%s","bizCode":"ali.china.damai","scenario":"itemsku","exParams":"{\\"dataType\\":2,\\"dataId\\":\\"%s\\",\\"privilegeActId\\":\\"\\"}","platform":"8","comboChannel":"2","dmChannel":"damai@damaih5_h5"}' % (t, sign, self.performId, session_id))
             data = json.loads(response.text)
             if not data:
                 self.cookies = self.get_cookies(True)
@@ -80,7 +78,7 @@ class DM(Monitor):
     def get_cookies(self, generate=False):
         cookies = {'_m_h5_tk': '3248763e77796ca30ca6f491c67e295d_1695299807188', '_m_h5_tk_enc': 'b5f681b816498129282f003be7b8c547'}
         if generate:
-            response = requests.get("https://mtop.damai.cn/h5/mtop.damai.wireless.search.project.classify/1.0/?jsv=2.7.2&appKey=12574478&t=1695289192037&sign=26ff9869af995563292758401df0e5c5&type=originaljson&dataType=json&v=1.0&H5Request=true&AntiCreep=true&AntiFlood=true&api=mtop.damai.wireless.search.project.classify&requestStart=1695288564353&data=%7B%22currentCityId%22%3A%220%22%2C%22cityOption%22%3A1%2C%22pageIndex%22%3A1%2C%22pageSize%22%3A15%2C%22sortType%22%3A3%2C%22categoryId%22%3A0%2C%22returnItemOption%22%3A4%2C%22dateType%22%3A0%2C%22dmChannel%22%3A%22damai%40damaih5_h5%22%7D", headers=get_DM_headers(), verify=False, proxies=self.proxy, timeout=10)
+            response = self.request("https://mtop.damai.cn/h5/mtop.damai.wireless.search.project.classify/1.0/?jsv=2.7.2&appKey=12574478&t=1695289192037&sign=26ff9869af995563292758401df0e5c5&type=originaljson&dataType=json&v=1.0&H5Request=true&AntiCreep=true&AntiFlood=true&api=mtop.damai.wireless.search.project.classify&requestStart=1695288564353&data=%7B%22currentCityId%22%3A%220%22%2C%22cityOption%22%3A1%2C%22pageIndex%22%3A1%2C%22pageSize%22%3A15%2C%22sortType%22%3A3%2C%22categoryId%22%3A0%2C%22returnItemOption%22%3A4%2C%22dateType%22%3A0%2C%22dmChannel%22%3A%22damai%40damaih5_h5%22%7D")
             cookies = requests.utils.dict_from_cookiejar(response.cookies)
         return cookies
 
@@ -101,3 +99,29 @@ class DM(Monitor):
         new_md5 = md5()
         new_md5.update(s.encode(encoding='utf-8'))
         return new_md5.hexdigest()
+
+    def request(self, url: str) -> Response:
+        return requests.get(
+            url=url,
+            cookies=self.cookies,
+            headers={
+                'pragma': 'no-cache',
+                'sec-ch-ua-mobile': '?0',
+                'sec-fetch-mode': 'cors',
+                'sec-fetch-dest': 'empty',
+                'cache-control': 'no-cache',
+                'authority': 'mtop.damai.cn',
+                'accept': 'application/json',
+                'sec-fetch-site': 'same-site',
+                'origin': 'https://m.damai.cn',
+                'sec-ch-ua-platform': '"macOS"',
+                'referer': 'https://m.damai.cn/',
+                'accept-language': 'zh-CN,zh;q=0.9',
+                'content-type': 'application/x-www-form-urlencoded',
+                'sec-ch-ua': '"Not/A)Brand";v="99", "Google Chrome";v="115", "Chromium";v="115"',
+                'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+            },
+            proxies=super()._proxy,
+            verify=False,
+            timeout=10
+        )
