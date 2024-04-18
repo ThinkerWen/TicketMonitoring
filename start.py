@@ -29,7 +29,7 @@ class Runner:
     threadPool = ThreadPoolExecutor(max_workers=100, thread_name_prefix="ticket_monitor_")
 
     @staticmethod
-    def loop_monitor(monitor: Union[DM, MY, FWD], show: dict) -> None:
+    def loop_monitor(monitor: Union[DM, MY, FWD, PXQ], show: dict) -> None:
         while datetime.strptime(show.get("deadline"), "%Y-%m-%d %H:%M:%S") > datetime.now():
             try:
                 if monitor.monitor():
