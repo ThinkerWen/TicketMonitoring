@@ -76,7 +76,7 @@ class DM(Monitor):
         return can_buy_list
 
     def get_cookies(self, generate=False):
-        cookies = {'_m_h5_tk': '3248763e77796ca30ca6f491c67e295d_1695299807188', '_m_h5_tk_enc': 'b5f681b816498129282f003be7b8c547'}
+        self.cookies = {'_m_h5_tk': '3248763e77796ca30ca6f491c67e295d_1695299807188', '_m_h5_tk_enc': 'b5f681b816498129282f003be7b8c547'}
         if generate:
             response = self.request("https://mtop.damai.cn/h5/mtop.damai.wireless.search.project.classify/1.0/?jsv=2.7.2&appKey=12574478&t=1695289192037&sign=26ff9869af995563292758401df0e5c5&type=originaljson&dataType=json&v=1.0&H5Request=true&AntiCreep=true&AntiFlood=true&api=mtop.damai.wireless.search.project.classify&requestStart=1695288564353&data=%7B%22currentCityId%22%3A%220%22%2C%22cityOption%22%3A1%2C%22pageIndex%22%3A1%2C%22pageSize%22%3A15%2C%22sortType%22%3A3%2C%22categoryId%22%3A0%2C%22returnItemOption%22%3A4%2C%22dateType%22%3A0%2C%22dmChannel%22%3A%22damai%40damaih5_h5%22%7D")
             cookies = requests.utils.dict_from_cookiejar(response.cookies)
