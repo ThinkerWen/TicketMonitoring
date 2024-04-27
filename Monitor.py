@@ -7,8 +7,8 @@ import urllib3
 
 class Monitor:
     __last_alert_time = 0
+    _proxy = None
     # 频繁请求请添加代理，自建代理见GitHub: https://github.com/ThinkerWen/ProxyServer
-    _proxy = {"http": f"http://127.0.0.1:12301", "https": f"http://127.0.0.1:12301"}
 
     def __init__(self):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

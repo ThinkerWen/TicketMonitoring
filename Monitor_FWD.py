@@ -40,6 +40,9 @@ class FWD(Monitor):
     def monitor(self) -> list:
         logging.info(f"纷玩岛 {self.show_info.get('show_name')} 监控中")
         can_buy_list = list()
+        response = self.request(f'https://api.livelab.com.cn/performance/app/project/countDown?projectId={self.performId}')
+        if json.loads(response.text).get("data") > 0:
+            return can_buy_list
         response = self.request(f'https://api.livelab.com.cn/performance/app/project/get_performs?project_id={self.performId}&v=1694683437294&retry=false')
         show_info = json.loads(response.text)
         if show_info.get("code") != 10000:
