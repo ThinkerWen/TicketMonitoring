@@ -37,7 +37,7 @@ class PXQ(Monitor):
                 self.show_info["seat_info"].append(seat_info)
 
     def monitor(self) -> list:
-        logging.info(f"纷玩岛 {self.show_info.get('show_name')} 监控中")
+        logging.info(f"票星球 {self.show_info.get('show_name')} 监控中")
         can_buy_list = list()
         response = self.request(f'https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{self.performId}/sessions_dynamic_data')
         show_info = json.loads(response.text)
