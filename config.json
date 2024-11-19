@@ -1,27 +1,32 @@
 {
   "proxy": null,
-  "monitor_list": [{
+  "token": {
+    "my": "登陆小程序后抓包获取token"
+  },
+  "monitor_list": [
+    {
       "show_id": "844180471181",
       "show_name": "【北京】Jessie J 演唱会-北京站",
       "platform": 0,
       "deadline": "2024-12-01 00:00:00"
     },
     {
-      "show_id": "302945",
-      "show_name": "周杰伦2024“嘉年华”世界巡回演唱会-杭州站",
+      "show_id": "360282",
+      "show_name": "【北京】Jessie J 演唱会-北京站",
       "platform": 1,
-      "deadline": "2024-04-21 00:00:00"
+      "deadline": "2024-12-01 00:00:00"
     },
     {
-      "show_id": "744",
-      "show_name": "【上海】邓紫棋I AM GLORIA巡回演唱会-上海站",
+      "show_id": "3191333934",
+      "show_name": "【深圳】陈奕迅FEAR and DREAMS世界巡回演唱会－深圳站",
       "platform": 2,
-      "deadline": "2024-05-26 00:00:00"
-    },{
-      "show_id": "65ec0632cfc3b200019ea854",
-      "show_name": "【北京】于文文「魔方视界」演唱会-北京站",
+      "deadline": "2024-12-15 00:00:00"
+    },
+    {
+      "show_id": "67107aebae5e8300012f5444",
+      "show_name": "【北京】Jessie J 演唱会-北京站",
       "platform": 3,
-      "deadline": "2024-04-27 00:00:00"
+      "deadline": "2024-12-01 00:00:00"
     }
   ]
 }

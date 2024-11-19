@@ -33,7 +33,7 @@ class Runner:
         while datetime.strptime(show.get("deadline"), "%Y-%m-%d %H:%M:%S") > datetime.now():
             try:
                 if monitor.monitor():
-                    info = f"平台{show.get('platform')} {show.get('show_name')} 已回流，请及时购票！"
+                    info = f"{monitor.show_info.get('platform')} {show.get('show_name')} 已回流，请及时购票！"
                     logging.info(info)
                     monitor.bark_alert(info)
             except Exception as e:

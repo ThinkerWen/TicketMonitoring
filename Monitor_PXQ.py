@@ -9,51 +9,62 @@ from Monitor import Monitor
 
 class PXQ(Monitor):
 
+    show_start = False
+
     def __init__(self, perform: dict) -> None:
         super().__init__()
+        self.show_info = {
+            "platform": "票星球",
+            "seat_info": list(),
+            "session_info": list(),
+            "show_id": perform.get('show_id'),
+            "show_name": perform.get('show_name')
+        }
         logging.info(f"票星球 {perform.get('show_name')} 开始加载")
-        self.performId = perform.get('show_id')
-        self.show_info = dict()
         self.get_show_infos()
         logging.info(f"票星球 {self.show_info.get('show_name')} 加载成功")
 
     def get_show_infos(self):
-        response = self.request(f"https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{self.performId}/sessions_static_data")
-        self.show_info["show_id"] = json.loads(response.text).get("data").get("showId")
-        self.show_info["show_name"] = json.loads(response.text).get("data").get("showName")
-        self.show_info["seat_info"] = list()
-        self.show_info["platform"] = 3
+        show_id = self.show_info.get('show_id')
+        response = self.request(f"https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{show_id}/sessions_static_data")
         show_info = json.loads(response.text)
         for session in show_info.get("data").get("sessionVOs"):
             session_id = session.get("bizShowSessionId")
             session_name = session.get("sessionName")
-            response = self.request(f'https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{self.performId}/show_session/{session_id}/seat_plans_static_data')
+            self.show_info["session_info"].append({
+                "session_id": session_id,
+                "session_name": session_name,
+            })
+            response = self.request(f'https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{show_id}/show_session/{session_id}/seat_plans_static_data')
             for seat in response.json().get("data").get("seatPlans"):
-                seat_info = dict()
-                seat_info["session_id"] = session_id
-                seat_info["session_name"] = session_name
-                seat_info["seat_plan_id"] = seat.get("seatPlanId")
-                seat_info["seat_plan_name"] = seat.get("seatPlanName")
-                self.show_info["seat_info"].append(seat_info)
+                self.show_info["seat_info"].append({
+                    "session_id": session_id,
+                    "session_name": session_name,
+                    "seat_plan_id": seat.get("seatPlanId"),
+                    "seat_plan_name": seat.get("seatPlanName"),
+                })
 
     def monitor(self) -> list:
         logging.info(f"票星球 {self.show_info.get('show_name')} 监控中")
-        can_buy_list = list()
-        response = self.request(f'https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{self.performId}/sessions_dynamic_data')
-        show_info = json.loads(response.text)
-        if show_info.get("statusCode") != 200:
-            return can_buy_list
-        for session in show_info.get("data").get("sessionVOs"):
-            session_id = session.get("bizShowSessionId")
-            if session.get("hasSessionSoldOut") or session.get("sessionSaleTimeCountdown", 0) > 0:
-                continue
-            response = self.request(f'https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{self.performId}/show_session/{session_id}/seat_plans_dynamic_data').json()
-            if response.get("statusCode") != 200:
-                return can_buy_list
-            for seat in response.get("data").get("seatPlans"):
-                if seat.get("canBuyCount") <= 0:
-                    continue
-                can_buy_list.append(seat.get("seatPlanId"))
+        can_buy_list = []
+        show_id = self.show_info.get('show_id')
+
+        if not self.show_start:
+            response = self.request( f'https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{show_id}/sessions_dynamic_data')
+            show_info = response.json()
+            if show_info.get("statusCode") == 200:
+                for session in show_info.get("data", {}).get("sessionVOs", []):
+                    if session.get("sessionSaleTimeCountdown", 0) > 0:
+                        return can_buy_list
+                self.show_start = True
+        for session in self.show_info.get("session_info"):
+            session_id = session.get("session_id")
+            response = self.request(f'https://m.piaoxingqiu.com/cyy_gatewayapi/show/pub/v3/show/{show_id}/show_session/{session_id}/seat_plans_dynamic_data')
+            if response.json().get("statusCode") == 200:
+                can_buy_list.extend(
+                    seat.get("seatPlanId") for seat in response.json().get("data", {}).get("seatPlans", [])
+                    if seat.get("canBuyCount", 0) > 0
+                )
         return can_buy_list
 
     def request(self, url: str) -> Response:

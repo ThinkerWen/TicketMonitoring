@@ -18,7 +18,7 @@ class DM(Monitor):
         self.seat_url = DM.get_seat_url()
         self.request = self.do_request()
         self.show_info = {
-            "platform": 0,
+            "platform": "大麦",
             "seat_info": list(),
             "session_info": list(),
             "show_id": perform.get('show_id'),

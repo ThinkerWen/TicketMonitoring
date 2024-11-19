@@ -9,79 +9,76 @@ from Monitor import Monitor
 
 class MY(Monitor):
 
+    token = str()
+
     def __init__(self, perform: dict) -> None:
         super().__init__()
-        logging.info(f"猫眼 {perform.get('show_name')} 开始加载")
+        file = open("config.json", "r", encoding="utf-8")
+        self.token = json.load(file).get("token").get("my")
+        file.close()
         self.performId = perform.get('show_id')
-        self.show_info = dict()
+        self.show_info = {
+            "platform": "猫眼",
+            "seat_info": list(),
+            "session_info": list(),
+            "show_id": perform.get('show_id'),
+            "show_name": perform.get('show_name')
+        }
+        logging.info(f"猫眼 {perform.get('show_name')} 开始加载")
         self.get_show_infos()
         logging.info(f"猫眼 {self.show_info.get('show_name')} 加载成功")
 
     def get_show_infos(self):
-        response = self.request(f'https://wx.maoyan.com/maoyansh/myshow/ajax/v2/performance/{self.performId}', self.performId)
-        self.show_info["show_id"] = json.loads(response.text).get("data").get("performanceId")
-        self.show_info["show_name"] = json.loads(response.text).get("data").get("name")
-        self.show_info["seat_info"] = list()
-        self.show_info["platform"] = 1
-        response = self.request(f'https://wx.maoyan.com/maoyansh/myshow/ajax/v2/performance/{self.performId}/shows/0', self.performId)
-        show_info = json.loads(response.text)
-        for session in show_info.get("data"):
+        show_id = self.show_info.get('show_id')
+        response = requests.post(f"https://wx.maoyan.com/my/odea/project/shows?token={self.token}&clientPlatform=2", json={"projectId":show_id}, headers=MY.headers(), proxies=self._proxy)
+        show_info = response.json().get("data")
+        for session in show_info.get("showListVO"):
             session_id = session.get("showId")
-            session_name = session.get("name")
-            response = self.request(f'https://wx.maoyan.com/maoyansh/myshow/ajax/v2/show/{session_id}/tickets?sellChannel=7&performanceId={self.performId}&cityId=1', self.performId)
-            show_session_info = json.loads(response.text)
-            for seat in show_session_info.get("data"):
-                seat_info = dict()
-                seat_info["session_id"] = session_id
-                seat_info["session_name"] = session_name
-                seat_info["seat_plan_id"] = seat.get("ticketClassId")
-                seat_info["seat_plan_name"] = str(int(seat.get("ticketPrice")))
-                self.show_info["seat_info"].append(seat_info)
+            session_name = session.get("showName")
+            self.show_info["session_info"].append({
+                "session_id": session_id,
+                "session_name": session_name,
+            })
+            response = self.request(f"https://wx.maoyan.com/my/odea/show/tickets?token={self.token}&showId={session_id}&projectId={show_id}&clientPlatform=2")
+            show_session_info = response.json().get("data")
+            for seat in show_session_info.get("ticketsVO"):
+                self.show_info["seat_info"].append({
+                    "session_id": session_id,
+                    "session_name": session_name,
+                    "seat_plan_id": seat.get("ticketId"),
+                    "seat_plan_name": str(int(seat.get("ticketPriceVO").get("ticketPrice"))),
+                })
 
     def monitor(self) -> list:
         logging.info(f"猫眼 {self.show_info.get('show_name')} 监控中")
-        can_buy_list = list()
-        response = self.request(f'https://wx.maoyan.com/maoyansh/myshow/ajax/v2/performance/{self.performId}/shows/0', self.performId)
-        show_info = json.loads(response.text)
-        if show_info.get("code") != 200:
-            return can_buy_list
-        for show in show_info.get("data"):
-            show_id = show.get("showId")
-            if show.get("soldOut"):
-                continue
-            response = self.request(f'https://wx.maoyan.com/maoyansh/myshow/ajax/v2/show/{show_id}/tickets?sellChannel=7&performanceId={self.performId}&cityId=1', self.performId)
-            show_session_info = json.loads(response.text)
-            if show_session_info.get("code") == 200:
-                for session in show_session_info.get("data"):
-                    seat = session.get("salesPlanVO")
-                    salesPlanId = seat.get("salesPlanId")
-                    if not seat.get("currentAmount"):
-                        continue
-                    can_buy_list.append(salesPlanId)
+        can_buy_list = []
+        show_id = self.show_info.get('show_id')
+        for session in self.show_info.get("session_info", []):
+            session_id = session.get("session_id")
+            response = self.request(f"https://wx.maoyan.com/my/odea/show/tickets?token={self.token}&showId={session_id}&projectId={show_id}&clientPlatform=2")
+            tickets = response.json().get("data", {}).get("ticketsVO", [])
+            can_buy_list.extend(ticket.get("ticketId") for ticket in tickets if ticket.get("remainingStock"))
         return can_buy_list
 
-    def request(self, url: str, perform_id: str) -> Response:
+    def request(self, url: str) -> Response:
         return requests.get(
             url=url,
-            headers={
-                'xweb_xhr': '1',
-                'Accept': '*/*',
-                'Host': 'wx.maoyan.com',
-                'X-Channel-ID': '70001',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Dest': 'empty',
-                'version': 'wallet-v4.5.11',
-                'X-Requested-With': 'wxapp',
-                'Accept-Language': 'zh-CN,zh',
-                'Sec-Fetch-Site': 'cross-site',
-                'x-wxa-referer': 'pages/search/index',
-                'Content-Type': 'multipart/form-data',
-                'x-wxa-page': 'pages/show/detail/index',
-                'Referer': 'https://servicewechat.com/wxdbb4c5f1b8ee7da1/1366/page-frame.html',
-                'x-wxa-query': f'%7B%22id%22%3A%22{perform_id}%22%2C%22utm_source%22%3A%22wxwallet_search%22%7D',
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 MicroMessenger/6.8.0(0x16080000) NetType/WIFI MiniProgramEnv/Mac MacWechat/WMPF XWEB/30817',
-            },
+            headers=MY.headers(),
             proxies=super()._proxy,
             verify=False,
             timeout=10
         )
+
+    @staticmethod
+    def headers():
+        return {
+            'Host': 'wx.maoyan.com',
+            'X-Channel-ID': '70001',
+            'version': 'wallet-v5.10.9',
+            'X-Requested-With': 'wxapp',
+            'content-type': 'application/json',
+            'x-wxa-referer': 'pages/show/detail/v2/index',
+            'x-wxa-page': 'pages/showsubs/ticket-level/v2/index',
+            'Referer': 'https://servicewechat.com/wxdbb4c5f1b8ee7da1/1557/page-frame.html',
+            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.53(0x18003531) NetType/WIFI Language/zh_CN',
+        }
