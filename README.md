@@ -19,7 +19,7 @@ python3 start.py
 ### 二、Docker（推荐）
 ```bash
 mkdir /etc/ticket-monitor
-vim /etc/ticket-monitor/config.json  # 配置文件⬇️
+vim /etc/ticket-monitor/config.json  # 配置文件见config.json⬆️️
 docker run -d --restart=unless-stopped -v /etc/ticket-monitor/config.json:/app/config.json --name="ticket-monitor" designerwang/ticket-monitor:latest
 ```
 <br>
