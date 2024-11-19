@@ -1,3 +1,4 @@
+import json
 import logging
 from time import time
 
@@ -8,9 +9,17 @@ import urllib3
 class Monitor:
     __last_alert_time = 0
     _proxy = None
+    # proxy在config.json中配置格式为: {
+    #     "http": "http://10.16.10.24:12001",
+    #     "https": "http://10.16.10.24:12001"
+    #   }
     # 频繁请求请添加代理，自建代理见GitHub: https://github.com/ThinkerWen/ProxyServer
 
     def __init__(self):
+        file = open("config.json", "r", encoding="utf-8")
+        proxy = json.load(file).get("proxy")
+        self._proxy = proxy if proxy else None
+        file.close()
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         logging.basicConfig(format='%(asctime)s.%(msecs)03d [%(filename)s:%(lineno)d] : %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
 

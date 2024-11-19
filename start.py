@@ -43,7 +43,7 @@ class Runner:
 
     def start(self):
         file = open("config.json", "r", encoding="utf-8")
-        show_list = json.loads(file.read())
+        show_list = json.load(file).get("monitor_list")
         file.close()
 
         for show in show_list:
