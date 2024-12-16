@@ -14,7 +14,7 @@ python3 -m pip install -r requirements.txt
 # 执行程序
 python3 start.py
 ```
-**程序默认没有用代理，若要添加代理请修改`config.json`(自建隧道代理查看GitHub：[ProxyServer](https://github.com/ThinkerWen/ProxyServer))
+程序默认没有用代理，若要添加代理请修改`config.json`(自建隧道代理查看GitHub：[ProxyServer](https://github.com/ThinkerWen/ProxyServer))
 
 ### 二、Docker（推荐）
 ```bash
@@ -33,7 +33,7 @@ docker run -d --restart=unless-stopped -v /etc/ticket-monitor/config.json:/app/c
 | show_id   | 演出id    | 通过抓包获取，找到类似于`perfromId` `projectId` `showId` 等的关键字即可              |
 | show_name | 演出名称    | 可以任意填写，自己好记即可                                                     |
 | platform  | 演出的监控平台 | 和`show_id`的平台对应，`platform`参照：(`大麦: 0` `猫眼: 1` ` 纷玩岛: 2` `票星球: 3`) |
-| deadline  | 监控的截止时间 | 截止时间内进行监控，超过截止时间则停止监控,许按照`2000-01-01 00:00:00`格式填写                |
+| deadline  | 监控的截止时间 | 截止时间内进行监控，超过截止时间则停止监控,需按照`2000-01-01 00:00:00`格式填写                |
 
 
 <br>
